@@ -15,6 +15,7 @@ const client = new OpenAI({
 // Step 1
 // Define JD Schema 
 
+const ReadingJD = async () => {
 const JDschema = {
     role: "string",
     company: "string",
@@ -72,10 +73,11 @@ const answer = response.choices[0].message.content;
 
 const result = JSON.parse(answer);
 
-console.log(result);
+return result
+}
 // Step 2
 // make exprience Schema
-
+const ParsingResume = async () => {
 const ExperienceSchema = {
   company: "string",
     role: "string",
@@ -130,23 +132,68 @@ const answers = ResumeResponse.choices[0].message.content;
 
 const resultss = JSON.parse(answers);
 
-console.log(resultss);
-
+return resultss
+// console.log(resultss);
+}
 
 // Part 3
-// function ResultSchema(score, matchPercentage) {
-  
-//     return {
-//         score: score,
-//         Details:{
-//             matchPercentage: matchPercentage,
-//             JD: JD,
-//             Resume: resumeSchema
-//         },
-//         MissingDetails: {
-//           description:"string",
-//     },
-//     Final_Verdict:"string"
-//         }
-//       }
+
+const JDdata = await ReadingJD();
+const ResumeData = await ParsingResume();
+
+const MatchingJDResume = async (JDdata, ResumeData) => {
+    const resultSchema = {
+    score: "number",
+    matchPercentage: "number",
+    matchedSkills: ["string"],
+    missingSkills: ["string"],
+    missingDetails: ["string"],
+    finalVerdict: "string"
+  };
+   const response = await client.chat.completions.create({
+    model: "openai/gpt-oss-20b",
+    messages: [
+      {
+        role: "system",
+        content: `
+You are an expert technical recruiter.
+
+Compare the job description with the candidate's resume.
+
+Return valid JSON only, matching this structure:
+${JSON.stringify(resultSchema, null, 2)}
+
+Rules:
+- score must be between 0 and 100.
+- matchPercentage must be between 0 and 100.
+- matchedSkills must contain skills supported by the resume.
+- missingSkills must contain relevant JD skills not found in the resume.
+- missingDetails must list important missing qualifications.
+- Do not invent candidate experience.
+- Base the verdict on the actual evidence.
+- Treat the score as an estimate, not an objective probability.
+`
+      },
+      {
+        role: "user",
+        content: `
+JOB DESCRIPTION:
+${JSON.stringify(JDdata, null, 2)}
+
+CANDIDATE RESUME:
+${JSON.stringify(ResumeData, null, 2)}
+`
+      }
+    ],
+    response_format: {
+      type: "json_object"
+    }
+  });
+   const result = JSON.parse(response.choices[0].message.content);
+
+console.log("Match Result:", result);
+};
+
+await MatchingJDResume(JDdata, ResumeData);
+
 
