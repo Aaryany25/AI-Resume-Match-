@@ -19,7 +19,7 @@ const exprience ={
 
 }
 
-const LLMCall = async (input) => {
+const LLMCall = async (input , textFormat) => {
 const response = await client.responses.create({
     model: "openai/gpt-oss-20b",
 

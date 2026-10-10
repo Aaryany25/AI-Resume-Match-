@@ -66,6 +66,7 @@ ${JD}
   response_format: {
     type: "json_object",
   },
+  
 });
 const answer = response.choices[0].message.content;
 
@@ -73,14 +74,79 @@ const result = JSON.parse(answer);
 
 console.log(result);
 // Step 2
+// make exprience Schema
+
+const ExperienceSchema = {
+  company: "string",
+    role: "string",
+    duration: "string",
+    responsibilities: "string"
+}
 // make Resume schema
 
-const Resume 
-// make exprience Schema
+const resumeSchema = {
+    name: "string",
+    role: "string",
+    company: "string",
+    skills: ["string"],
+    experience: [ExperienceSchema]
+};
 // Make the Result Schema with score and match percentage
-// upload the Resume from the File
-// Parse it in Resume Schema (LLM call) -->
-// Write A function Finalscore(JD,RESUME){
-// Make the LLM Call in JSON mode in Result Schema
-// Then return the Result
-// }  
+
+  const user_Resume_prompt = `
+extract the Resume in Resume schema
+Extract the resume details into this JSON structure:
+
+${JSON.stringify(resumeSchema, null, 2)}
+
+Experience schema:
+${JSON.stringify(ExperienceSchema, null, 2)}
+
+Return valid JSON only.
+`
+
+const buffer = await readFile("./Aryan Yadav Frontend.pdf");
+
+const parser = new PDFParse({ data: buffer });
+const  resume = await parser.getText();
+const resumetext = resume.text;
+  const ResumeResponse = await client.chat.completions.create({
+  model: "openai/gpt-oss-20b",
+  messages: [
+    {
+      role: "system",
+      content: user_Resume_prompt
+    },
+    {
+      role: "user",
+      content: resumetext
+    }
+  ],
+  response_format: {
+    type: "json_object",
+  },
+});
+const answers = ResumeResponse.choices[0].message.content;
+
+const resultss = JSON.parse(answers);
+
+console.log(resultss);
+
+
+// Part 3
+// function ResultSchema(score, matchPercentage) {
+  
+//     return {
+//         score: score,
+//         Details:{
+//             matchPercentage: matchPercentage,
+//             JD: JD,
+//             Resume: resumeSchema
+//         },
+//         MissingDetails: {
+//           description:"string",
+//     },
+//     Final_Verdict:"string"
+//         }
+//       }
+
